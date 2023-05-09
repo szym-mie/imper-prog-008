@@ -1,0 +1,5 @@
+*.exe
+o*
+
+# ignore vim sessions
+*.vim

@@ -69,6 +69,43 @@ int cmp_date(const void *a, const void *b)
 	return da - db;
 }
 
+void add_days(Date *d, int days)
+{
+	int month_days = 0;
+	while (days > 0)
+	{
+		if (d->month != 2) month_days = d->month % 2 ? 30 : 31;
+		else month_days = d->year % 4 ? 28 : 29;
+		
+		if (month_days >= days)
+		{
+			d->month++;
+			if (d->month == 12) 
+			{
+				d->month = 0;
+				d->year++;
+			}
+			days -= month_days;
+		}
+		else if (month_days >= days + d->day)
+		{
+			d->month++;
+			if (d->month == 12) 
+			{
+				d->month = 0;
+				d->year++;
+			}
+			d->day = days - (month_days - d->day);
+			days = 0;
+		}
+		else
+		{
+			d->day += days;
+			days = 0;
+		}
+	}
+}
+
 void print_art(Food *p, size_t n, char *art) {
 	for (size_t i = 0; i < n; i++)
 	{
@@ -100,7 +137,7 @@ Food* add_record(Food *tab, size_t tab_size, int *np, ComparFp compar, Food *new
 	return food;
 }
 
-int cmp_food(const void *a, const void *b)
+int cmp_food_art(const void *a, const void *b)
 {
 	const Food *pa = a;
 	const Food *pb = b;
@@ -114,6 +151,13 @@ int cmp_food(const void *a, const void *b)
 	return cmp_date(&pa->valid_date, &pb->valid_date);
 }
 
+int cmp_food_date(const void *a, const void *b)
+{
+	const Food *pa = a;
+	const Food *pb = b;
+	return cmp_date(&pa->valid_date, &pb->valid_date);
+}
+
 int read_stream(Food *tab, size_t size, int no, FILE *stream) {
 	Food c;
 	int cnt = 0;
@@ -123,18 +167,35 @@ int read_stream(Food *tab, size_t size, int no, FILE *stream) {
 		elems_read = fscanf(stream, "%15s %f %f " DATE_FMT, c.art, &c.price, &c.amount, DATE_FMT_IN(c.valid_date));
 		if (elems_read < 6) return cnt;
 		printf("rs: art %s\n", c.art);
-		add_record(tab, size, &cnt, cmp_food, &c);
+		add_record(tab, size, &cnt, cmp_food_art, &c);
 	}
 
 	return cnt;
 }
 
 int read_stream0(Food *tab, size_t size, int no, FILE *stream) {
-	return 0;
+	Food c;
+	int cnt = 0;
+	int elems_read;
+	for (int i = 0; i < no && i < size; i++)
+	{	
+		elems_read = fscanf(stream, "%15s %f %f " DATE_FMT, c.art, &c.price, &c.amount, DATE_FMT_IN(c.valid_date));
+		if (elems_read < 6) return cnt;
+		printf("rs: art %s\n", c.art);
+		memcpy(tab+i, &c, sizeof(Food));	
+	}
+
+	return cnt;
 }
 
 float value(Food *food_tab, size_t n, Date curr_date, int anticip) {
-	return 0;
+	add_days(&curr_date, anticip);
+
+	qsort(food_tab, n, sizeof(Food), cmp_food_date);
+
+	float sum = 0;
+	// bsearch here
+	return sum;
 }
 
 /////////////////////////////////////////////////////////////////

@@ -5,6 +5,8 @@
 
 #define TEST 1
 
+#define SIGN(N) N >= 0.0 ? 1 : -1;
+
 #define DATE_FMT "%02d.%02d.%04d"
 #define DATE_FMT_OUT(D) (D).day, (D).month, (D).year
 #define DATE_FMT_IN(D) &(D).day, &(D).month, &(D).year
@@ -32,10 +34,11 @@ typedef int (*ComparFp)(const void *, const void *);
 
 void *bsearch2(const void *key, void *base, size_t nitems, size_t size, ComparFp compar, char *result) {
 	char *blk = base;
-	int i = nitems / 2;
-	int p = 0;
+	int i;
+	int lo = 0, hi = nitems;
 	for (;;)
 	{
+		i = (lo + hi) / 2;
 		printf("bs: %d[%d]\n", i, nitems);
 		void *elem = blk+(i*size);
 		int cmp = compar(key, elem);
@@ -46,14 +49,14 @@ void *bsearch2(const void *key, void *base, size_t nitems, size_t size, ComparFp
 			return elem;
 		}
 		printf("bs: cmp %d\n", cmp);
-		int n = (i + (cmp > 0 ? nitems : 0)) / 2;
-		if (n == i)
+		if (cmp > 0) hi = i;
+		else lo = i;
+		if ((lo + hi) / 2 == i)
 		{
 			printf("bs: not found\n");
 			*result = 0;
 			return elem;
 		}
-		i = n;
 	}
 }
 
@@ -145,8 +148,8 @@ int cmp_food_art(const void *a, const void *b)
 	printf("%s %s -> %d\n", pa->art, pb->art, art_cmp);
 	if (art_cmp) return art_cmp;
 	printf("cmpfood: art ok\n");
-	int price_cmp = pa->price - pb->price;
-	if (price_cmp) return price_cmp;
+	double price_cmp = pa->price - pb->price;
+	if (price_cmp) return SIGN(price_cmp); // fix so it would work with diff < 1.0
 	printf("cmpfood: price ok\n");
 	return cmp_date(&pa->valid_date, &pb->valid_date);
 }
